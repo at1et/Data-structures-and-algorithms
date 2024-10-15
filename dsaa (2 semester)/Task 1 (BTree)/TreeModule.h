@@ -1,3 +1,4 @@
+#pragma once
 #ifndef TREEMODULE_H
 #define TREEMODULE_H
 
@@ -18,9 +19,18 @@ public:
     // Конструктор
     TreeNode(T value) : data(value), left(nullptr), right(nullptr) {}
 
-    // Деструктор (shared_ptr автоматически освободит память)
+    // Деструктор 
     ~TreeNode() {
         cout << "Удаление узла с данными: " << data << endl;
+    }
+
+    void NLR(TreeNode<T>* node)
+    {
+        if (node != NULL) {
+            std::cout << node->Data << "\n";
+            NLR(node->left);
+            NLR(node->right);
+        }
     }
 };
 
@@ -40,7 +50,7 @@ bool isStrictBinaryTree(shared_ptr<TreeNode<T>> node) {
 template<typename T>
 bool isCompleteBinaryTree(shared_ptr<TreeNode<T>> root) {
     if (!root) return true;
-
+    //shared_ptr разобраться
     queue<shared_ptr<TreeNode<T>>> q;
     q.push(root);
     bool flag = false;
@@ -53,7 +63,8 @@ bool isCompleteBinaryTree(shared_ptr<TreeNode<T>> root) {
         if (node->left) {
             if (flag) return false;  // Если раньше был замечен узел без двух потомков
             q.push(node->left);
-        } else {
+        }
+        else {
             flag = true;  // Если узел не имеет левого потомка, отмечаем это
         }
 
@@ -61,7 +72,8 @@ bool isCompleteBinaryTree(shared_ptr<TreeNode<T>> root) {
         if (node->right) {
             if (flag) return false;  // Если раньше был замечен узел без двух потомков
             q.push(node->right);
-        } else {
+        }
+        else {
             flag = true;  // Если узел не имеет правого потомка, отмечаем это
         }
     }
@@ -84,8 +96,8 @@ bool isPerfectBinaryTree(shared_ptr<TreeNode<T>> root, int depth, int level = 0)
     }
 
     // Рекурсивно проверяем левое и правое поддеревья
-    return isPerfectBinaryTree(root->left, depth, level + 1) && 
-           isPerfectBinaryTree(root->right, depth, level + 1);
+    return isPerfectBinaryTree(root->left, depth, level + 1) &&
+        isPerfectBinaryTree(root->right, depth, level + 1);
 }
 
 // Функция для нахождения глубины дерева (необходима для проверки совершенного дерева)
@@ -94,7 +106,7 @@ int findDepth(shared_ptr<TreeNode<T>> node) {
     int depth = 0;
     while (node) {
         depth++;
-        node = node->left;
+        node = node->left; // исправить
     }
     return depth;
 }
