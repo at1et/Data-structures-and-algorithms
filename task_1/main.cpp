@@ -1,51 +1,94 @@
-// main.cpp
+// Author: Полуэктов Андрей
+//
+// Задание 1. Подготовительный код для работы с массивами, измерения времени; последовательный поиск.
+// Ссылка на задание: https://example.com/assignment_link
+//
+// Данная программа демонстрирует работу с классическими массивами, включает функции генерации
+// случайных и монотонно возрастающих массивов, последовательный поиск (с вариантами) и измерение времени работы.
+
 #include <iostream>
 #include <cassert>
-#include "moduleSample.h"
+#include <chrono>
+#include <functional>
+#include "array_utils.h"
+#include "search.h"
+#include "timer.h"
+using namespace std;
 
 int main() {
-    const size_t SIZE = 1000000; // Размер массива
-    const int MIN_VAL = 1; // Минимальное значение элемента массива
-    const int MAX_VAL = 100; // Максимальное значение элемента массива
+    cout << "Starting Assignment 1: Array utilities and sequential search" << endl;
 
-    // Измерение времени создания случайного массива и записи его в файл
-    double timeRandomArray = measureTime([&]() {
-        int* randArray = createRandomArray<int>(SIZE, MIN_VAL, MAX_VAL); // Создание случайного массива
-        printArrayToFile(randArray, SIZE, "random_array.txt"); // Запись массива в файл
-        delete[] randArray; // Освобождение памяти
-        });
+    // Запуск автоматических тестов для функции проверки сортировки.
+    testIsSorted();
 
-    std::cout << "Time to create and write random array: " << timeRandomArray << " milliseconds" << std::endl;
+    // Параметры для создания массива
+    size_t arraySize = 10000000;  // 10 миллионов элементов – для надежных измерений времени
+    int randomMin = -1000000;
+    int randomMax = 1000000;
 
-    // Измерение времени создания возрастающего массива и записи его в файл
-    double timeIncreasingArray = measureTime([&]() {
-        int* incArray = createIncreasingArray<int>(SIZE, 1); // Создание массива с монотонно возрастающими значениями
-        printArrayToFile(incArray, SIZE, "increasing_array.txt"); // Запись массива в файл
-        delete[] incArray; // Освобождение памяти
-        });
+    cout << "Creating random array of size " << arraySize << "..." << endl;
+    int* randomArray = createRandomArray(arraySize, randomMin, randomMax);
 
-    std::cout << "Time to create and write increasing array: " << timeIncreasingArray << " milliseconds" << std::endl;
-
-    // Создание массивов для последующих операций
-    int* randArray = createRandomArray<int>(SIZE, MIN_VAL, MAX_VAL); // Создание случайного массива
-    int* incArray = createIncreasingArray<int>(SIZE, 1); // Создание возрастающего массива
-
-    // Проверка, отсортирован ли массив
-    assert(!isArraySorted(randArray, SIZE)); // Проверка, не отсортирован ли случайный массив (должен быть не отсортирован)
-    assert(isArraySorted(incArray, SIZE)); // Проверка, отсортирован ли возрастающий массив (должен быть отсортирован)
-
-    // Поиск значения в массиве
-    size_t index = sequentialSearch(randArray, SIZE, 50); // Поиск значения 50 в случайном массиве
-    if (index != SIZE) { // Если значение найдено
-        std::cout << "Element found at index: " << index << std::endl; // Вывод индекса найденного элемента
-    }
-    else { // Если значение не найдено
-        std::cout << "Element not found" << std::endl; // Вывод сообщения о том, что значение не найдено
+    // Измеряем время последовательного поиска в неотсортированном массиве
+    int searchValue = randomArray[arraySize / 2];  // выбираем значение, которое гарантированно присутствует
+    {
+        Timer timer("Sequential search in unsorted array");
+        size_t index = sequentialSearch(randomArray, arraySize, searchValue);
+        if (index != arraySize) {
+            cout << "Found value " << searchValue << " at index " << index << endl;
+        }
+        else {
+            cout << "Value " << searchValue << " not found in unsorted array." << endl;
+        }
     }
 
-    // Освобождение памяти
-    delete[] randArray;
-    delete[] incArray;
+    // Создаем монотонно возрастающий массив
+    cout << "Creating monotonically increasing array of size " << arraySize << "..." << endl;
+    int* sortedArray = new int[arraySize];
+    // Параметры: первый элемент – случайное число в диапазоне [0, 10], шаг – случайное число в диапазоне [1, 10]
+    fillArrayRandomIncreasing(sortedArray, arraySize, 0, 10, 1, 10);
+    // Проверка, что массив отсортирован
+    assert(isSorted(sortedArray, arraySize) && "The array should be sorted!");
 
+    // Измеряем время последовательного поиска в отсортированном массиве
+    int sortedSearchValue = sortedArray[arraySize / 2];  // выбираем значение, которое точно присутствует
+    {
+        Timer timer("Sequential search in sorted array");
+        size_t index = sequentialSearch(sortedArray, arraySize, sortedSearchValue);
+        if (index != arraySize) {
+            cout << "Found value " << sortedSearchValue << " at index " << index << endl;
+        }
+        else {
+            cout << "Value " << sortedSearchValue << " not found in sorted array." << endl;
+        }
+    }
+
+    // Бонус: последовательный поиск с использованием произвольного предиката.
+    // Ищем первый элемент, который больше заданного порога.
+    int threshold = sortedArray[arraySize / 2];
+    {
+        Timer timer("Sequential search with predicate (first element > threshold)");
+        // Явно оборачиваем лямбду в std::function (благодаря using namespace std; пишем просто function)
+        function<bool(const int&)> pred = [threshold](const int& x) { return x > threshold; };
+        size_t index = sequentialSearch(sortedArray, arraySize, pred);
+        if (index != arraySize) {
+            cout << "Found first element greater than " << threshold
+                << " at index " << index << " with value " << sortedArray[index] << endl;
+        }
+        else {
+            cout << "No element greater than " << threshold << " found." << endl;
+        }
+    }
+
+    // Записываем отсортированный массив в файл (опционально)
+    string filename = "sorted_array.txt";
+    writeArrayToFile(filename, sortedArray, arraySize);
+    cout << "Sorted array written to file: " << filename << endl;
+
+    // Освобождаем выделенную динамическую память
+    delete[] randomArray;
+    delete[] sortedArray;
+
+    cout << "Program completed." << endl;
     return 0;
 }
