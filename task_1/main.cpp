@@ -68,7 +68,6 @@ int main() {
     int threshold = sortedArray[arraySize / 2];
     {
         Timer timer("Sequential search with predicate (first element > threshold)");
-        // Явно оборачиваем лямбду в std::function (благодаря using namespace std; пишем просто function)
         function<bool(const int&)> pred = [threshold](const int& x) { return x > threshold; };
         size_t index = sequentialSearch(sortedArray, arraySize, pred);
         if (index != arraySize) {
